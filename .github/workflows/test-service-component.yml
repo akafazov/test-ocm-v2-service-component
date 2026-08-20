@@ -45,8 +45,8 @@ jobs:
                   credentials:
                     - type: Credentials
                       properties:
-                        username: github
-                        password: ${{ secrets.GITHUB_TOKEN }}
+                        username: ${{ github.actor }}
+                        password: ${{ secrets.GHCR_TOKEN }}
           EOF
 
       - name: Create test component constructors
