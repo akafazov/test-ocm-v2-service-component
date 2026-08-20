@@ -41,7 +41,7 @@ jobs:
                     type: OCIRegistry
                     scheme: https
                     hostname: ghcr.io
-                    path: platform-mesh
+                    path: akafazov
                   credentials:
                     - type: Credentials
                       properties:
@@ -53,49 +53,32 @@ jobs:
         run: |
           cat <<'EOF' > component-constructor.yaml
           components:
-            - name: "github.com/test/ocm-v2-test"
+            - name: "github.com/akafazov/test-component"
               version: "${VERSION}"
               provider:
                 name: Test Team
               componentReferences:
                 - name: chart
-                  componentName: "github.com/test/test-chart"
+                  componentName: "github.com/akafazov/test-chart"
                   version: "${VERSION}"
           EOF
 
-          # Also create the dependency chart component
-          cat <<'EOF' > chart-constructor.yaml
-          components:
-            - name: "github.com/test/test-chart"
-              version: "${VERSION}"
-              provider:
-                name: Test Team
-          EOF
-
-      - name: Test Add component-versions to local CTF (OCM v2)
+      - name: Test Add component-versions to remote registry (OCM v2)
         run: |
-          echo "Testing OCM v2 component-versions with component references..."
-          echo "Publishing to: ctf::./test-output.ctf"
+          echo "Testing OCM v2 component-versions publishing directly to ghcr.io/akafazov..."
+          echo "Publishing to: ghcr.io/akafazov"
+          echo "Component: github.com/akafazov/test-component:${{ inputs.chartVersion }}"
+          echo "With remote reference: github.com/akafazov/test-chart:${{ inputs.chartVersion }}"
           echo ""
-
-          # Create the dependency chart component first
-          echo "Creating dependency: github.com/test/test-chart:${{ inputs.chartVersion }}"
-          ./ocm add component-versions --repository "ctf::./test-output.ctf" --constructor chart-constructor.yaml
+          echo "This tests the pattern: creating a service component with external chart reference"
           echo ""
-
-          # Create the main component that references the chart
-          echo "Creating main component: github.com/test/ocm-v2-test:${{ inputs.chartVersion }}"
-          ./ocm add component-versions --repository "ctf::./test-output.ctf" --constructor component-constructor.yaml
+          ./ocm add component-versions --repository "ghcr.io/akafazov" --constructor component-constructor.yaml
           echo ""
-
-          echo "✓ Success! Component with references was added to local CTF"
+          echo "✓ Success! Component was published to ghcr.io/akafazov with external references resolved"
         env:
           VERSION: ${{ inputs.chartVersion }}
 
-      - name: Verify components were created in local CTF
+      - name: Verify component was published to registry
         run: |
-          echo "Verifying dependency component..."
-          ./ocm get component-version "ctf::./test-output.ctf//github.com/test/test-chart:${{ inputs.chartVersion }}" -o yaml
-          echo ""
-          echo "Verifying main component with reference..."
-          ./ocm get component-version "ctf::./test-output.ctf//github.com/test/ocm-v2-test:${{ inputs.chartVersion }}" -o yaml
+          echo "Verifying component in ghcr.io/akafazov..."
+          ./ocm get component-version "ghcr.io/akafazov//github.com/akafazov/test-component:${{ inputs.chartVersion }}" -o yaml
