@@ -54,7 +54,7 @@ jobs:
           # Create the chart component (dependency)
           cat <<'EOF' > chart-constructor.yaml
           components:
-            - name: "github.com/akafazov/test-chart"
+            - name: "github.com/akafazov/test-chart-component"
               version: "${VERSION}"
               provider:
                 name: Test Team
@@ -63,13 +63,13 @@ jobs:
           # Create the service component that references the chart
           cat <<'EOF' > component-constructor.yaml
           components:
-            - name: "github.com/akafazov/test-component"
+            - name: "github.com/akafazov/test-service-component"
               version: "${VERSION}"
               provider:
                 name: Test Team
               componentReferences:
                 - name: chart
-                  componentName: "github.com/akafazov/test-chart"
+                  componentName: "github.com/akafazov/test-chart-component"
                   version: "${VERSION}"
           EOF
 
@@ -91,7 +91,7 @@ jobs:
       - name: Verify components were published to registry
         run: |
           echo "Verifying chart component in ghcr.io/akafazov..."
-          ./ocm get component-version "ghcr.io/akafazov//github.com/akafazov/test-chart:${{ inputs.chartVersion }}" -o yaml
+          ./ocm get component-version "ghcr.io/akafazov//github.com/akafazov/test-chart-component:${{ inputs.chartVersion }}" -o yaml
           echo ""
           echo "Verifying service component in ghcr.io/akafazov..."
-          ./ocm get component-version "ghcr.io/akafazov//github.com/akafazov/test-component:${{ inputs.chartVersion }}" -o yaml
+          ./ocm get component-version "ghcr.io/akafazov//github.com/akafazov/test-service-component:${{ inputs.chartVersion }}" -o yaml
