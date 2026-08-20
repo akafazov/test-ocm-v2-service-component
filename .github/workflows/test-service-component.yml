@@ -49,8 +49,18 @@ jobs:
                         password: ${{ secrets.GITHUB_TOKEN }}
           EOF
 
-      - name: Create test component constructor
+      - name: Create test component constructors
         run: |
+          # Create the chart component (dependency)
+          cat <<'EOF' > chart-constructor.yaml
+          components:
+            - name: "github.com/akafazov/test-chart"
+              version: "${VERSION}"
+              provider:
+                name: Test Team
+          EOF
+
+          # Create the service component that references the chart
           cat <<'EOF' > component-constructor.yaml
           components:
             - name: "github.com/akafazov/test-component"
@@ -67,18 +77,21 @@ jobs:
         run: |
           echo "Testing OCM v2 component-versions publishing directly to ghcr.io/akafazov..."
           echo "Publishing to: ghcr.io/akafazov"
-          echo "Component: github.com/akafazov/test-component:${{ inputs.chartVersion }}"
-          echo "With remote reference: github.com/akafazov/test-chart:${{ inputs.chartVersion }}"
           echo ""
-          echo "This tests the pattern: creating a service component with external chart reference"
+          echo "Step 1: Create the chart component dependency"
+          ./ocm add component-versions --repository "ghcr.io/akafazov" --constructor chart-constructor.yaml
           echo ""
+          echo "Step 2: Create the service component that references the chart"
           ./ocm add component-versions --repository "ghcr.io/akafazov" --constructor component-constructor.yaml
           echo ""
-          echo "✓ Success! Component was published to ghcr.io/akafazov with external references resolved"
+          echo "✓ Success! Service component was published with external chart reference resolved"
         env:
           VERSION: ${{ inputs.chartVersion }}
 
-      - name: Verify component was published to registry
+      - name: Verify components were published to registry
         run: |
-          echo "Verifying component in ghcr.io/akafazov..."
+          echo "Verifying chart component in ghcr.io/akafazov..."
+          ./ocm get component-version "ghcr.io/akafazov//github.com/akafazov/test-chart:${{ inputs.chartVersion }}" -o yaml
+          echo ""
+          echo "Verifying service component in ghcr.io/akafazov..."
           ./ocm get component-version "ghcr.io/akafazov//github.com/akafazov/test-component:${{ inputs.chartVersion }}" -o yaml
