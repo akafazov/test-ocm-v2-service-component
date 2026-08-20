@@ -63,7 +63,7 @@ jobs:
                   version: "${APP_VERSION}"
           EOF
 
-      - name: Test: Add component-versions directly to ghcr.io (OCM v2)
+      - name: Test Add component-versions directly to ghcr.io (OCM v2)
         run: |
           echo "Testing OCM v2 component-versions with external reference resolution..."
           echo "Publishing to: ghcr.io/platform-mesh"
