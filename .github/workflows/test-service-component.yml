@@ -1,0 +1,83 @@
+name: Test OCM v2 Service Component Direct Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      chartVersion:
+        description: "Chart version"
+        required: true
+        default: "0.1.0"
+      appVersion:
+        description: "App version"
+        required: true
+        default: "v0.1.0"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Setup OCM CLI
+        run: |
+          REPO="open-component-model/open-component-model"
+          version="v0.13.0"
+          echo "Installing ocm-cli version $version from $REPO"
+          curl -LsS -o ocm "https://github.com/$REPO/releases/download/${version}/ocm-linux-amd64"
+          chmod a+x ocm
+
+      - name: Write OCM credentials file
+        run: |
+          cat <<EOF > $HOME/.ocmconfig
+          type: generic.config.ocm.software/v1
+          configurations:
+            - type: credentials.config.ocm.software
+              consumers:
+                - identity:
+                    type: OCIRegistry
+                    scheme: https
+                    hostname: ghcr.io
+                    path: platform-mesh
+                  credentials:
+                    - type: Credentials
+                      properties:
+                        username: github
+                        password: ${{ secrets.GITHUB_TOKEN }}
+          EOF
+
+      - name: Create test component constructor
+        run: |
+          cat <<'EOF' > component-constructor.yaml
+          components:
+            - name: "${COMPONENT_NAME}"
+              version: "${VERSION}"
+              provider:
+                name: Test Team
+              componentReferences:
+                - name: security-operator-chart
+                  componentName: "github.com/platform-mesh/helm-charts/security-operator"
+                  version: "${APP_VERSION}"
+          EOF
+
+      - name: Test: Add component-versions directly to ghcr.io (OCM v2)
+        run: |
+          echo "Testing OCM v2 component-versions with external reference resolution..."
+          echo "Publishing to: ghcr.io/platform-mesh"
+          echo "Component: test/ocm-v2-test:${{ inputs.chartVersion }}"
+          echo "External reference: github.com/platform-mesh/helm-charts/security-operator:${{ inputs.appVersion }}"
+          echo ""
+          ./ocm add component-versions --repository "ghcr.io/platform-mesh" --constructor component-constructor.yaml
+          echo ""
+          echo "✓ Success! OCM v2 was able to resolve external component references"
+        env:
+          COMPONENT_NAME: test/ocm-v2-test
+          VERSION: ${{ inputs.chartVersion }}
+          APP_VERSION: ${{ inputs.appVersion }}
+
+      - name: Verify component was published
+        run: |
+          ./ocm get component-version "ghcr.io/platform-mesh//test/ocm-v2-test:${{ inputs.chartVersion }}" -o yaml
