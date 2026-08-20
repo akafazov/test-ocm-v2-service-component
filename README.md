@@ -28,9 +28,9 @@ The workflow will:
 
 ## How It Works
 
-The test creates two components in the same org:
-- `github.com/akafazov/test-service-component` - a service component
-- `github.com/akafazov/test-chart-component` - a chart component (referenced by the service component)
+The test creates two components scoped to this repo:
+- `github.com/akafazov/test-ocm-v2-service-component/service` - a service component
+- `github.com/akafazov/test-ocm-v2-service-component/chart` - a chart component (referenced by the service component)
 
 Both are published directly to the remote registry, allowing OCM to resolve the reference during graph discovery.
 
