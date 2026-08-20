@@ -53,7 +53,7 @@ jobs:
         run: |
           cat <<'EOF' > component-constructor.yaml
           components:
-            - name: "${COMPONENT_NAME}"
+            - name: "github.com/test/ocm-v2-test"
               version: "${VERSION}"
               provider:
                 name: Test Team
@@ -67,7 +67,7 @@ jobs:
         run: |
           echo "Testing OCM v2 component-versions with external reference resolution..."
           echo "Publishing to: ctf::./test-output.ctf"
-          echo "Component: test/ocm-v2-test:${{ inputs.chartVersion }}"
+          echo "Component: github.com/test/ocm-v2-test:${{ inputs.chartVersion }}"
           echo "External reference: github.com/platform-mesh/helm-charts/security-operator:${{ inputs.appVersion }}"
           echo ""
           echo "Key test: OCM v2 must resolve the external reference from ghcr.io/platform-mesh"
@@ -77,10 +77,9 @@ jobs:
           echo ""
           echo "✓ Success! OCM v2 was able to resolve external component references from registry"
         env:
-          COMPONENT_NAME: test/ocm-v2-test
           VERSION: ${{ inputs.chartVersion }}
           APP_VERSION: ${{ inputs.appVersion }}
 
       - name: Verify component was created in local CTF
         run: |
-          ./ocm get component-version "ctf::./test-output.ctf//test/ocm-v2-test:${{ inputs.chartVersion }}" -o yaml
+          ./ocm get component-version "ctf::./test-output.ctf//github.com/test/ocm-v2-test:${{ inputs.chartVersion }}" -o yaml
